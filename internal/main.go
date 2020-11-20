@@ -12,6 +12,8 @@ import (
 
 	"github.com/nivek706/d2skillcalc/pkg/fileutil"
 	"github.com/nivek706/d2skillcalc/pkg/index/skills"
+	"github.com/nivek706/d2skillcalc/pkg/index/eletypelookup"
+
 
 )
 
@@ -110,7 +112,7 @@ func printSkillTable(file *fileutil.File, skillname string, startlevel int, maxl
 
 	// get skill damage information (this is going to be difficult)
 	skillinfo["eledmg"] = make([]interface{}, leveloffset+1)
-	skillinfo["eledmg"][0] = "Ele Dmg"
+	skillinfo["eledmg"][0] = fmt.Sprintf("%s Dmg", eletypelookup.EType[skillrecord[skills.EType]])
 	for i := 1; i <= leveloffset; i++ {
 		eleDmg := getSkillDamageValues(skillrecord, int(i+(startlevel-1)))
 		skillinfo["eledmg"][i] = fmt.Sprintf("%.0f - %.0f", eleDmg[0], eleDmg[1])
