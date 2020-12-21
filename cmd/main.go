@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/nivek706/d2skillcalc/configs"
 	"github.com/nivek706/d2skillcalc/pkg/fileutil"
 
 	"github.com/nivek706/d2skillcalc/internal/structs/skill"
@@ -13,9 +14,14 @@ import (
 
 func main() {
 
+	c, err := configs.LoadConfig(".")
+	if err != nil {
+		fmt.Println("fatal")
+	}
+
 	//read the Skills.txt file, load into memory
-	skillFile := fileutil.ReadFile("../assets/113c-data/Skills.txt")
-	missileFile := fileutil.ReadFile("../assets/113c-data/Missiles.txt")
+	skillFile := fileutil.ReadFile(fmt.Sprintf("%sSkills.txt", c.TxtDirPath))
+	missileFile := fileutil.ReadFile(fmt.Sprintf("%sMissiles.txt", c.TxtDirPath))
 
 	startInputLoop(skillFile, missileFile)
 }
