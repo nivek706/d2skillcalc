@@ -290,9 +290,7 @@ func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile
 					missileDamageValues = append(missileDamageValues, tempArray...)
 				}
 				missileDamageValues[j] = append(missileDamageValues[j],
-					Damage{skillRecord[skills.SrvMissile],
-						missileDmg[j][0],
-						missileDmg[j][1]})
+					missileDmg[j])
 			}
 			// fmt.Println(missileDamageValues)
 		}
@@ -328,9 +326,7 @@ func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile
 				// missileDamageValues[damageValuesIndexOffset+j] = append(missileDamageValues[damageValuesIndexOffset+j], missileDmg[j]...)
 				missileDamageValues[damageValuesIndexOffset+j] =
 					append(missileDamageValues[damageValuesIndexOffset+j],
-						Damage{skillRecord[skills.SrvMissileA],
-							missileDmg[j][0],
-							missileDmg[j][1]})
+						missileDmg[j])
 				// fmt.Printf("missileDamageValues: %v\n", missileDamageValues)
 			}
 		}
@@ -359,9 +355,7 @@ func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile
 				// missileDamageValues[damageValuesIndexOffset+j] = append(missileDamageValues[damageValuesIndexOffset+j], missileDmg[j]...)
 				missileDamageValues[damageValuesIndexOffset+j] =
 					append(missileDamageValues[damageValuesIndexOffset+j],
-						Damage{skillRecord[skills.SrvMissileB],
-							missileDmg[j][0],
-							missileDmg[j][1]})
+						missileDmg[j])
 				// fmt.Printf("missileDamageValues: %v\n", missileDamageValues)
 				// fmt.Println(missileDamageValues)
 				// fmt.Printf("missileDamageValues: %v\n", missileDamageValues)
@@ -389,9 +383,7 @@ func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile
 				// missileDamageValues[damageValuesIndexOffset+j] = append(missileDamageValues[damageValuesIndexOffset+j], missileDmg[j]...)
 				missileDamageValues[damageValuesIndexOffset+j] =
 					append(missileDamageValues[damageValuesIndexOffset+j],
-						Damage{skillRecord[skills.SrvMissileC],
-							missileDmg[j][0],
-							missileDmg[j][1]})
+						missileDmg[j])
 				// fmt.Println(missileDamageValues)
 				// fmt.Printf("missileDamageValues: %v\n", missileDamageValues)
 			}
@@ -463,7 +455,7 @@ func calcManaCost(sLvl int, basemana float64, startmana float64, lvlmana float64
 func calculateMissileDamage(
 	missileName string,
 	sLvl int,
-	skill Skill) [][]float64 {
+	skill Skill) []Damage {
 	/*
 		Another shot at the logic for calculating missile damage
 		If the skillrow contains anything in srvmissile*
@@ -486,7 +478,7 @@ func calculateMissileDamage(
 
 	// fmt.Println("Entered calculateMissileDamage")
 
-	missileDamageSlice := make([][]float64, 0)
+	missileDamageSlice := make([]Damage, 0)
 
 	missileRecord := skill.getMissileRecord(missileName)
 
@@ -494,7 +486,8 @@ func calculateMissileDamage(
 		missileSkill := NewSkill(missileRecord[missiles.Skill], skill.skillFile, skill.missileFile)
 
 		// then, calculate the damage for this missile
-		missileDamageSlice = append(missileDamageSlice, missileSkill.getSkillEleDamageValues(sLvl))
+		tmpSkillDamage := missileSkill.getSkillEleDamageValues(sLvl)
+		missileDamageSlice = append(missileDamageSlice, Damage{missileSkill.name, tmpSkillDamage[0], tmpSkillDamage[1]})
 
 	} else if missileRecord[missiles.EMin] != "" {
 		eMin, _ := strconv.ParseFloat(missileRecord[missiles.EMin], 64)
@@ -519,7 +512,7 @@ func calculateMissileDamage(
 		eMissileDamageMin = calculateMissileFuncDamage(missileName, eMissileDamageMin)
 		eMissileDamageMax = calculateMissileFuncDamage(missileName, eMissileDamageMax)
 
-		missileDamageSlice = append(missileDamageSlice, []float64{eMissileDamageMin, eMissileDamageMax})
+		missileDamageSlice = append(missileDamageSlice, Damage{missileName, eMissileDamageMin, eMissileDamageMax})
 
 	}
 
