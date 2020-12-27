@@ -8,6 +8,8 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 
+	"github.com/nivek706/d2skillcalc/internal/common"
+	"github.com/nivek706/d2skillcalc/internal/structs/damage"
 	"github.com/nivek706/d2skillcalc/pkg/fileutil"
 	"github.com/nivek706/d2skillcalc/pkg/index/eletypelookup"
 	"github.com/nivek706/d2skillcalc/pkg/index/missiles"
@@ -18,15 +20,9 @@ type Skill struct {
 	name            string
 	skillFile       *fileutil.File
 	missileFile     *fileutil.File
-	physicalDamage  Damage
-	elementalDamage Damage
-	missileDamage   [][]Damage
-}
-
-type Damage struct {
-	dmgType string
-	min     float64
-	max     float64
+	physicalDamage  damage.Damage
+	elementalDamage damage.Damage
+	missileDamage   [][]damage.Damage
 }
 
 func NewSkill(name string, skillFile *fileutil.File, missileFile *fileutil.File) *Skill {
@@ -127,10 +123,10 @@ func (skill Skill) PrintSkillTable(startlevel int, maxlevel int) {
 	for j := 0; j < len(missileDmg); j++ {
 		missileIndex := fmt.Sprintf("missile%d", j)
 		skillinfo[fmt.Sprintf(missileIndex)] = make([]interface{}, 1)
-		skillinfo[missileIndex][0] = missileDmg[j][0].dmgType
+		skillinfo[missileIndex][0] = missileDmg[j][0].DmgType
 		for i := 0; i < len(missileDmg[j]); i++ {
 			// skillinfo[missileIndex][i] = fmt.Sprintf("%.0f - %.0f", missileDmg[j][i], missileDmg[j][i+1])
-			skillinfo[missileIndex] = append(skillinfo[missileIndex], fmt.Sprintf("%.1f - %.1f", missileDmg[j][i].min, missileDmg[j][i].max))
+			skillinfo[missileIndex] = append(skillinfo[missileIndex], fmt.Sprintf("%.1f - %.1f", missileDmg[j][i].Min, missileDmg[j][i].Max))
 		}
 		// fmt.Println(skillinfo)
 		t.AppendRow(skillinfo[missileIndex])
@@ -258,10 +254,10 @@ func (skill Skill) getSkillEleDamageValues(sLvl int) []float64 {
 	return damageValues
 }
 
-func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile *fileutil.File, skillFile *fileutil.File, startlevel int, maxlevel int) [][]Damage {
+func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile *fileutil.File, skillFile *fileutil.File, startlevel int, maxlevel int) [][]damage.Damage {
 	// fmt.Println("Entered getSkillMissileDamageValues")
 	//returns a 2D array of all missile damage values for a skill
-	missileDamageValues := make([][]Damage, 0)
+	missileDamageValues := make([][]damage.Damage, 0)
 
 	leveloffset := maxlevel - startlevel + 1
 	damageValuesIndexOffset := 0
@@ -286,7 +282,7 @@ func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile
 			for j := 0; j < len(missileDmg); j++ {
 				// on the first iteration, add new row(s)
 				if i == 1 {
-					tempArray := make([][]Damage, 1)
+					tempArray := make([][]damage.Damage, 1)
 					missileDamageValues = append(missileDamageValues, tempArray...)
 				}
 				missileDamageValues[j] = append(missileDamageValues[j],
@@ -314,7 +310,7 @@ func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile
 			for j := 0; j < len(missileDmg); j++ {
 				// on the first iteration, add new row(s)
 				if i == 1 {
-					tempArray := make([][]Damage, 1)
+					tempArray := make([][]damage.Damage, 1)
 					missileDamageValues = append(missileDamageValues, tempArray...)
 					// fmt.Printf("missileDamageValues after tempArray: %v\n", missileDamageValues)
 				}
@@ -347,7 +343,7 @@ func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile
 			for j := 0; j < len(missileDmg); j++ {
 				// on the first iteration, add new row(s)
 				if i == 1 {
-					tempArray := make([][]Damage, 1)
+					tempArray := make([][]damage.Damage, 1)
 					missileDamageValues = append(missileDamageValues, tempArray...)
 				}
 				// fmt.Printf("missileDmg[%d]: %v\n", i, missileDmg[i])
@@ -376,7 +372,7 @@ func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile
 			for j := 0; j < len(missileDmg); j++ {
 				// on the first iteration, add new row(s)
 				if i == 1 {
-					tempArray := make([][]Damage, 1)
+					tempArray := make([][]damage.Damage, 1)
 					missileDamageValues = append(missileDamageValues, tempArray...)
 				}
 				// fmt.Printf("missileDmg[%d]: %v\n", i, missileDmg[i])
@@ -391,9 +387,10 @@ func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile
 		}
 
 	}
-	// fmt.Printf("Final missileDamagValues: %v\n", missileDamageValues)
-	return missileDamageValues
+	// TODO: remove duplicates from the Missile damage array
+	missileDamageValues = common.RemoveDuplicateDamageRows(missileDamageValues)
 
+	return missileDamageValues
 }
 
 func calculateDamage(sLvl int, hitShift float64, baseDmg float64, levDmg1 float64, levDmg2 float64, levDmg3 float64, levDmg4 float64, levDmg5 float64) float64 {
@@ -455,7 +452,7 @@ func calcManaCost(sLvl int, basemana float64, startmana float64, lvlmana float64
 func calculateMissileDamage(
 	missileName string,
 	sLvl int,
-	skill Skill) []Damage {
+	skill Skill) []damage.Damage {
 	/*
 		Another shot at the logic for calculating missile damage
 		If the skillrow contains anything in srvmissile*
@@ -478,7 +475,7 @@ func calculateMissileDamage(
 
 	// fmt.Println("Entered calculateMissileDamage")
 
-	missileDamageSlice := make([]Damage, 0)
+	missileDamageSlice := make([]damage.Damage, 0)
 
 	missileRecord := skill.getMissileRecord(missileName)
 
@@ -487,7 +484,7 @@ func calculateMissileDamage(
 
 		// then, calculate the damage for this missile
 		tmpSkillDamage := missileSkill.getSkillEleDamageValues(sLvl)
-		missileDamageSlice = append(missileDamageSlice, Damage{missileSkill.name, tmpSkillDamage[0], tmpSkillDamage[1]})
+		missileDamageSlice = append(missileDamageSlice, damage.Damage{missileSkill.name, tmpSkillDamage[0], tmpSkillDamage[1]})
 
 	} else if missileRecord[missiles.EMin] != "" {
 		eMin, _ := strconv.ParseFloat(missileRecord[missiles.EMin], 64)
@@ -512,7 +509,7 @@ func calculateMissileDamage(
 		eMissileDamageMin = calculateMissileFuncDamage(missileName, eMissileDamageMin)
 		eMissileDamageMax = calculateMissileFuncDamage(missileName, eMissileDamageMax)
 
-		missileDamageSlice = append(missileDamageSlice, Damage{missileName, eMissileDamageMin, eMissileDamageMax})
+		missileDamageSlice = append(missileDamageSlice, damage.Damage{missileName, eMissileDamageMin, eMissileDamageMax})
 
 	}
 
