@@ -229,6 +229,13 @@ func (skill Skill) getSkillEleDamageValues(sLvl int) []float64 {
 		 *
 	*/
 
+	eLen, _ := strconv.ParseFloat(skillRecord[skills.ELen], 64)
+	eLevLen1, _ := strconv.ParseFloat(skillRecord[skills.ELevLen1], 64)
+	eLevLen2, _ := strconv.ParseFloat(skillRecord[skills.ELevLen2], 64)
+	eLevLen3, _ := strconv.ParseFloat(skillRecord[skills.ELevLen3], 64)
+
+	length := calcLength(sLvl, eLen, eLevLen1, eLevLen2, eLevLen3)
+
 	var missileFunc string = ""
 	if skillRecord[skills.SrvMissileC] != "" {
 		missileFunc = skillRecord[skills.SrvMissileC]
@@ -242,8 +249,8 @@ func (skill Skill) getSkillEleDamageValues(sLvl int) []float64 {
 
 	if missileFunc != "" {
 		//apply the missileFunc damage calculation/transformation
-		minEleDmg = calculateMissileFuncDamage(missileFunc, minEleDmg)
-		maxEleDmg = calculateMissileFuncDamage(missileFunc, maxEleDmg)
+		minEleDmg = calculateMissileFuncDamage(missileFunc, minEleDmg, length)
+		maxEleDmg = calculateMissileFuncDamage(missileFunc, maxEleDmg, length)
 	}
 
 	damageValues[0] = minEleDmg
@@ -393,32 +400,31 @@ func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile
 func calculateDamage(sLvl int, hitShift float64, baseDmg float64, levDmg1 float64, levDmg2 float64, levDmg3 float64, levDmg4 float64, levDmg5 float64) float64 {
 	var calcDmg float64
 	calcDmg = baseDmg
+
 	//get added damage sLvl 2-8
-	if sLvl > 8 {
-		calcDmg = calcDmg + (levDmg1 * 7)
-	} else if sLvl > 1 {
+	if sLvl >= 2 && sLvl <= 8 {
 		calcDmg = calcDmg + (levDmg1 * float64(sLvl-1))
+	} else if sLvl > 8 {
+		calcDmg = calcDmg + (levDmg1 * 7)
 	}
 	//get added damage sLvl 9-16
-	if sLvl > 16 {
-		calcDmg = calcDmg + (levDmg2 * 8)
-	} else if sLvl > 8 {
+	if sLvl >= 9 && sLvl <= 16 {
 		calcDmg = calcDmg + (levDmg2 * float64(sLvl-8))
+	} else if sLvl > 16 {
+		calcDmg = calcDmg + (levDmg2 * 8)
 	}
 	//get added damage sLvl 17-22
-	if sLvl > 22 {
-		calcDmg = calcDmg + (levDmg3 * 6)
-	} else if sLvl > 16 {
+	if sLvl >= 17 && sLvl <= 22 {
 		calcDmg = calcDmg + (levDmg3 * float64(sLvl-16))
+	} else if sLvl > 22 {
+		calcDmg = calcDmg + (levDmg3 * 6)
 	}
 	//get added damage sLvl 23-28
-	if sLvl > 28 {
-		calcDmg = calcDmg + (levDmg4 * 6)
-	} else if sLvl > 22 {
+	if sLvl >= 23 && sLvl <= 28 {
 		calcDmg = calcDmg + (levDmg4 * float64(sLvl-22))
-	}
-	//get added damage sLvl 29+
-	if sLvl > 29 {
+	} else if sLvl > 28 {
+		calcDmg = calcDmg + (levDmg4 * 6)
+		//get added damage sLvl 29+
 		calcDmg = calcDmg + (levDmg5 * float64(sLvl-28))
 	}
 
@@ -430,6 +436,26 @@ func calculateDamage(sLvl int, hitShift float64, baseDmg float64, levDmg1 float6
 	//add in synergy damage??
 
 	return calcDmg
+}
+
+func calcLength(sLvl int, baseLength float64, levLen1 float64, levLen2 float64, levLen3 float64) float64 {
+	var calcLen float64
+	calcLen = baseLength
+	//get added length sLvl 2-8
+	if sLvl >= 2 && sLvl <= 8 {
+		calcLen = calcLen + (levLen1 * float64(sLvl-1))
+	} else if sLvl > 8 {
+		calcLen = calcLen + (levLen1 * 7)
+	}
+	//get added length sLvl 9-16
+	if sLvl >= 8 && sLvl <= 16 {
+		calcLen = calcLen + (levLen2 * float64(sLvl-8))
+	} else if sLvl > 16 {
+		calcLen = calcLen + (levLen2 * 8)
+		//get added length sLvl 17+
+		calcLen = calcLen + (levLen3 * float64(sLvl-16))
+	}
+	return calcLen
 }
 
 func calcManaCost(sLvl int, basemana float64, startmana float64, lvlmana float64, manashift float64, minmana float64) float64 {
@@ -503,8 +529,15 @@ func calculateMissileDamage(
 		eMissileDamageMin := calculateDamage(sLvl, hitShift, eMin, eMinLev1, eMinLev2, eMinLev3, eMinLev4, eMinLev5)
 		eMissileDamageMax := calculateDamage(sLvl, hitShift, eMax, eMaxLev1, eMaxLev2, eMaxLev3, eMaxLev4, eMaxLev5)
 
-		eMissileDamageMin = calculateMissileFuncDamage(missileName, eMissileDamageMin)
-		eMissileDamageMax = calculateMissileFuncDamage(missileName, eMissileDamageMax)
+		eLen, _ := strconv.ParseFloat(missileRecord[missiles.ELen], 64)
+		eLevLen1, _ := strconv.ParseFloat(missileRecord[missiles.ELevLen1], 64)
+		eLevLen2, _ := strconv.ParseFloat(missileRecord[missiles.ELevLen2], 64)
+		eLevLen3, _ := strconv.ParseFloat(missileRecord[missiles.ELevLen3], 64)
+
+		length := calcLength(sLvl, eLen, eLevLen1, eLevLen2, eLevLen3)
+
+		eMissileDamageMin = calculateMissileFuncDamage(missileName, eMissileDamageMin, length)
+		eMissileDamageMax = calculateMissileFuncDamage(missileName, eMissileDamageMax, length)
 
 		missileDamageSlice = append(missileDamageSlice, damage.Damage{missileName, eMissileDamageMin, eMissileDamageMax})
 
@@ -586,9 +619,9 @@ func calculateMissileDamage(
 	return missileDamageSlice
 }
 
-func calculateMissileFuncDamage(missileFunc string, damage float64) float64 {
+func calculateMissileFuncDamage(missileFunc string, damage float64, length float64) float64 {
 	var returnDmg float64
-	// fmt.Printf("calculateMissileFuncDamage: %v\n", missileFunc)
+	// fmt.Printf("missileFunc: %s\n", missileFunc)
 	switch missileFunc {
 	case "firewall":
 		returnDmg = damage * 25 * 3
@@ -598,6 +631,10 @@ func calculateMissileFuncDamage(missileFunc string, damage float64) float64 {
 		returnDmg = damage * 24 * 3
 	case "arcticblast1":
 		returnDmg = damage * 25
+	case "poisonnova":
+		returnDmg = damage * length
+	case "poisonexplosioncloud":
+		returnDmg = damage * length
 	default:
 		returnDmg = damage
 	}
