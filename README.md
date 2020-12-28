@@ -12,7 +12,7 @@ Obviously, there is a long way to go until the tool is fully functional. Please 
 
 ## Usage
 Built on golang 1.15.2  
-Clone the repository, change to the directory `/d2skillcalc/internal`, run `go run main.go`.
+Clone the repository, change to the directory `/d2skillcalc/cmd`, run `go run main.go`.
 
 Currently, the application simply takes the name of a skill, and will print out a skill table for levels 1 through 40. Much more to come in the future.
 ```
