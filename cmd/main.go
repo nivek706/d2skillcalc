@@ -37,10 +37,9 @@ func startInputLoop(skillFile *fileutil.File, missileFile *fileutil.File) {
 			break
 		}
 		selectedSkill := skill.NewSkill(skillName, skillFile, missileFile)
-		// selectedSkill.PopulateMissileDamage(1, 5)
-		selectedSkill.PrintSkillTable(1, 5)
-		// selectedSkill.PrintSkillTable(11, 20)
-		// selectedSkill.PrintSkillTable(21, 30)
-		// selectedSkill.PrintSkillTable(31, 40)
+		selectedSkill.PrintSkillTable(1, 10)
+		selectedSkill.PrintSkillTable(11, 20)
+		selectedSkill.PrintSkillTable(21, 30)
+		selectedSkill.PrintSkillTable(31, 40)
 	}
 }
