@@ -117,9 +117,6 @@ func (skill Skill) PrintSkillTable(startlevel int, maxlevel int) {
 
 	// get missile damage
 	missileDmg := skill.getSkillMissileDamageValues(skillrecord, skill.missileFile, skill.skillFile, startlevel, maxlevel)
-	fmt.Printf("missileDmg: %v\n", missileDmg)
-	fmt.Printf("len(missileDmg): %d\n", len(missileDmg))
-	// fmt.Println(len(missileDmg))
 	for j := 0; j < len(missileDmg); j++ {
 		missileIndex := fmt.Sprintf("missile%d", j)
 		skillinfo[fmt.Sprintf(missileIndex)] = make([]interface{}, 1)
@@ -598,7 +595,7 @@ func calculateMissileFuncDamage(missileFunc string, damage float64) float64 {
 	case "meteorfire":
 		returnDmg = damage * 25 * 3
 	case "firestormmaker":
-		returnDmg = damage * 25 * 3
+		returnDmg = damage * 24 * 3
 	case "arcticblast1":
 		returnDmg = damage * 25
 	default:
