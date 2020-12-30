@@ -7,9 +7,8 @@ import (
 	"strings"
 
 	"github.com/nivek706/d2skillcalc/configs"
-	"github.com/nivek706/d2skillcalc/pkg/fileutil"
-
 	"github.com/nivek706/d2skillcalc/internal/structs/skill"
+	"github.com/nivek706/d2skillcalc/pkg/fileutil"
 )
 
 func main() {
@@ -36,10 +35,13 @@ func startInputLoop(skillFile *fileutil.File, missileFile *fileutil.File) {
 		if skillName == "exit" {
 			break
 		}
-		selectedSkill := skill.NewSkill(skillName, skillFile, missileFile)
-		selectedSkill.PrintSkillTable(1, 10)
-		selectedSkill.PrintSkillTable(11, 20)
-		selectedSkill.PrintSkillTable(21, 30)
-		selectedSkill.PrintSkillTable(31, 40)
+		skillRange := skill.NewSkillRange(skillName, skillFile, missileFile, 1, 10)
+		skillRange.PrintSkillTable()
+		skillRange = skill.NewSkillRange(skillName, skillFile, missileFile, 11, 20)
+		skillRange.PrintSkillTable()
+		skillRange = skill.NewSkillRange(skillName, skillFile, missileFile, 21, 30)
+		skillRange.PrintSkillTable()
+		skillRange = skill.NewSkillRange(skillName, skillFile, missileFile, 31, 40)
+		skillRange.PrintSkillTable()
 	}
 }

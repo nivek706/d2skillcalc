@@ -1,12 +1,8 @@
 package skill
 
 import (
-	"fmt"
 	"math"
-	"os"
 	"strconv"
-
-	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/nivek706/d2skillcalc/internal/common"
 	"github.com/nivek706/d2skillcalc/internal/structs/damage"
@@ -20,17 +16,20 @@ type Skill struct {
 	name            string
 	skillFile       *fileutil.File
 	missileFile     *fileutil.File
+	level           int
+	manacost        float64
 	physicalDamage  damage.Damage
 	elementalDamage damage.Damage
-	missileDamage   [][]damage.Damage
+	missileDamage   []damage.Damage
 }
 
-func NewSkill(name string, skillFile *fileutil.File, missileFile *fileutil.File) *Skill {
-	skill := Skill{name: name, skillFile: skillFile, missileFile: missileFile}
-	return &skill
+func NewSkill(name string, skillFile *fileutil.File, missileFile *fileutil.File, level int) *Skill {
+	s := &Skill{name: name, skillFile: skillFile, missileFile: missileFile, level: level}
+	s.manacost = s.getManaCost()
+	return s
 }
 
-func (skill Skill) populateSkillDamage(minlevel int, maxlevel int) {
+func (skill Skill) populateSkillDamage() {
 
 }
 
@@ -38,99 +37,21 @@ func (skill Skill) populatePhysicalDamage() {
 
 }
 
-func (skill Skill) populateElementalDamage() {
+func (skill *Skill) populateElementalDamage() {
+	skill.elementalDamage = skill.getSkillEleDamageValues()
 
 }
 
-func (skill Skill) PopulateMissileDamage(minlevel int, maxlevel int) {
+func (skill *Skill) PopulateMissileDamage() {
 	skillRecord := skill.getSkillRecord()
-	missileDamageArray := skill.getSkillMissileDamageValues(skillRecord, skill.missileFile, skill.skillFile, minlevel, maxlevel)
-	if missileDamageArray != nil {
-	}
-	fmt.Println(missileDamageArray)
-	for i := 0; i < len(missileDamageArray); i++ {
-		// tempMissileDmg := make(Damage)
-		fmt.Printf("missileDamageArray[%d]: %v\n", i, missileDamageArray[i])
-		for j := 0; j < len(missileDamageArray[i]); j += 2 {
+	// fmt.Println(skillRecord)
+	missileDamageArray := skill.getSkillMissileDamage(skillRecord)
+	skill.missileDamage = missileDamageArray
+	// for i := 0; i < len(missileDamageArray); i++ {
+	// 	// tempMissileDmg := make(Damage)
+	// 	fmt.Printf("missileDamageArray[%d]: %v\n", i, missileDamageArray[i])
+	// }
 
-		}
-	}
-
-}
-
-func (skill Skill) PrintSkillInfo(skilllevel int) {
-	skillRecord := skill.getSkillRecord()
-
-	if skillRecord != nil {
-		fmt.Println("Skill: " + skillRecord[skills.Skill])
-		fmt.Println("Id: " + skillRecord[skills.Id])
-		basemana, _ := strconv.ParseFloat(skillRecord[skills.Mana], 64)
-		startmana, _ := strconv.ParseFloat(skillRecord[skills.StartMana], 64)
-		lvlmana, _ := strconv.ParseFloat(skillRecord[skills.LvlMana], 64)
-		manashift, _ := strconv.ParseFloat(skillRecord[skills.ManaShift], 64)
-		minmana, _ := strconv.ParseFloat(skillRecord[skills.MinMana], 64)
-		manacost := calcManaCost(skilllevel, basemana, startmana, lvlmana, manashift, minmana)
-		fmt.Printf("Calculated mana cost: %f\n", manacost)
-
-		// get damage information
-	}
-}
-
-func (skill Skill) PrintSkillTable(startlevel int, maxlevel int) {
-	skillrecord := skill.getSkillRecord()
-	if skillrecord == nil {
-		fmt.Printf("Sorry, could not find skill named: %s\n", skill.name)
-		return
-	}
-
-	leveloffset := maxlevel - startlevel + 1
-
-	skillinfo := make(map[string][]interface{})
-
-	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
-
-	//set levels
-	skillinfo["level"] = make([]interface{}, leveloffset+1)
-	skillinfo["level"][0] = "Level"
-	for i := 1; i <= leveloffset; i++ {
-		skillinfo["level"][i] = float64(i + (startlevel - 1))
-	}
-	t.AppendHeader(skillinfo["level"])
-
-	//get skill mana costs
-	skillinfo["manacost"] = make([]interface{}, leveloffset+1)
-	skillinfo["manacost"][0] = "Mana Cost"
-	for i := 1; i <= leveloffset; i++ {
-		skillinfo["manacost"][i] = fmt.Sprintf("%.1f", skill.getSkillManaCost(int(i+(startlevel-1))))
-	}
-	t.AppendRow(skillinfo["manacost"])
-
-	// get skill damage information (this is going to be difficult)
-	skillinfo["eledmg"] = make([]interface{}, leveloffset+1)
-	skillinfo["eledmg"][0] = fmt.Sprintf("%s Dmg", eletypelookup.EType[skillrecord[skills.EType]])
-	for i := 1; i <= leveloffset; i++ {
-		eleDmg := skill.getSkillEleDamageValues(int(i + (startlevel - 1)))
-		skillinfo["eledmg"][i] = fmt.Sprintf("%.0f - %.0f", eleDmg[0], eleDmg[1])
-	}
-	t.AppendRow(skillinfo["eledmg"])
-
-	// get missile damage
-	missileDmg := skill.getSkillMissileDamageValues(skillrecord, skill.missileFile, skill.skillFile, startlevel, maxlevel)
-	for j := 0; j < len(missileDmg); j++ {
-		missileIndex := fmt.Sprintf("missile%d", j)
-		skillinfo[fmt.Sprintf(missileIndex)] = make([]interface{}, 1)
-		skillinfo[missileIndex][0] = missileDmg[j][0].DmgType
-		for i := 0; i < len(missileDmg[j]); i++ {
-			// skillinfo[missileIndex][i] = fmt.Sprintf("%.0f - %.0f", missileDmg[j][i], missileDmg[j][i+1])
-			skillinfo[missileIndex] = append(skillinfo[missileIndex], fmt.Sprintf("%.1f - %.1f", missileDmg[j][i].Min, missileDmg[j][i].Max))
-		}
-		// fmt.Println(skillinfo)
-		t.AppendRow(skillinfo[missileIndex])
-
-	}
-
-	t.Render()
 }
 
 func (skill Skill) getSkillRecord() []string {
@@ -153,24 +74,24 @@ func (skill Skill) getMissileRecord(missileName string) []string {
 	return missile
 }
 
-func (skill Skill) getSkillManaCost(sLvl int) float64 {
+func (skill Skill) getManaCost() float64 {
 	skillRecord := skill.getSkillRecord()
 	basemana, _ := strconv.ParseFloat(skillRecord[skills.Mana], 64)
 	startmana, _ := strconv.ParseFloat(skillRecord[skills.StartMana], 64)
 	lvlmana, _ := strconv.ParseFloat(skillRecord[skills.LvlMana], 64)
 	manashift, _ := strconv.ParseFloat(skillRecord[skills.ManaShift], 64)
 	minmana, _ := strconv.ParseFloat(skillRecord[skills.MinMana], 64)
-	manacost := calcManaCost(sLvl, basemana, startmana, lvlmana, manashift, minmana)
+	manacost := calcManaCost(skill.level, basemana, startmana, lvlmana, manashift, minmana)
 	return manacost
 }
 
-func (skill Skill) getSkillEleDamageValues(sLvl int) []float64 {
+func (skill Skill) getSkillEleDamageValues() damage.Damage {
 	skillRecord := skill.getSkillRecord()
 
 	// return value indices
 	// 0 - calculated minimum damage
 	// 1 - calculated max damage
-	damageValues := make([]float64, 2)
+	// damageValues := make([]float64, 2)
 
 	//calculate elemental damage
 	//damage[type] = ((base_damage*srcdamage/128)+(skill_damage*effectiveshift*(100+synergy)/100))*(100+enhancer_stat)/100
@@ -201,7 +122,7 @@ func (skill Skill) getSkillEleDamageValues(sLvl int) []float64 {
 	eMinLev4, _ := strconv.ParseFloat(skillRecord[skills.EMinLev4], 64)
 	eMinLev5, _ := strconv.ParseFloat(skillRecord[skills.EMinLev5], 64)
 
-	minEleDmg := calculateDamage(sLvl, hitShift, eMin, eMinLev1, eMinLev2, eMinLev3, eMinLev4, eMinLev5)
+	minEleDmg := calculateDamage(skill.level, hitShift, eMin, eMinLev1, eMinLev2, eMinLev3, eMinLev4, eMinLev5)
 
 	//get max ele damage stats
 	eMax, _ := strconv.ParseFloat(skillRecord[skills.EMax], 64)
@@ -211,7 +132,7 @@ func (skill Skill) getSkillEleDamageValues(sLvl int) []float64 {
 	eMaxLev4, _ := strconv.ParseFloat(skillRecord[skills.EMaxLev4], 64)
 	eMaxLev5, _ := strconv.ParseFloat(skillRecord[skills.EMaxLev5], 64)
 
-	maxEleDmg := calculateDamage(sLvl, hitShift, eMax, eMaxLev1, eMaxLev2, eMaxLev3, eMaxLev4, eMaxLev5)
+	maxEleDmg := calculateDamage(skill.level, hitShift, eMax, eMaxLev1, eMaxLev2, eMaxLev3, eMaxLev4, eMaxLev5)
 
 	//TODO: factor in missile damage functions/calculations
 	//reference info: https://d2mods.info/forum/viewtopic.php?f=122&t=29595
@@ -234,7 +155,7 @@ func (skill Skill) getSkillEleDamageValues(sLvl int) []float64 {
 	eLevLen2, _ := strconv.ParseFloat(skillRecord[skills.ELevLen2], 64)
 	eLevLen3, _ := strconv.ParseFloat(skillRecord[skills.ELevLen3], 64)
 
-	length := calcLength(sLvl, eLen, eLevLen1, eLevLen2, eLevLen3)
+	length := calcLength(skill.level, eLen, eLevLen1, eLevLen2, eLevLen3)
 
 	var missileFunc string = ""
 	if skillRecord[skills.SrvMissileC] != "" {
@@ -253,11 +174,62 @@ func (skill Skill) getSkillEleDamageValues(sLvl int) []float64 {
 		maxEleDmg = calculateMissileFuncDamage(missileFunc, maxEleDmg, length)
 	}
 
-	damageValues[0] = minEleDmg
-	damageValues[1] = maxEleDmg
+	damageValues := damage.Damage{DmgType: eletypelookup.EType[skillRecord[skills.EType]], Min: minEleDmg, Max: maxEleDmg}
+
 	return damageValues
 }
 
+func (s Skill) getSkillMissileDamage(skillRecord []string) []damage.Damage {
+	// fmt.Println("Entered getSkillMissileDamageValues")
+	//returns a 2D array of all missile damage values for a skill
+	missileDamageValues := make([]damage.Damage, 0)
+
+	//srvmissile
+	if skillRecord[skills.SrvMissile] != "" {
+		missileDmg := calculateMissileDamage(skillRecord[skills.SrvMissile], s.level, s)
+		for j := 0; j < len(missileDmg); j++ {
+			missileDamageValues = append(missileDamageValues, missileDmg[j])
+		}
+	}
+	//srvmissilea
+	if skillRecord[skills.SrvMissileA] != "" {
+		missileDmg := calculateMissileDamage(skillRecord[skills.SrvMissileA], s.level, s)
+		for j := 0; j < len(missileDmg); j++ {
+			missileDamageValues = append(missileDamageValues, missileDmg[j])
+		}
+	}
+
+	//srvmissileb
+	if skillRecord[skills.SrvMissileB] != "" {
+		missileDmg := calculateMissileDamage(skillRecord[skills.SrvMissileB], s.level, s)
+		for j := 0; j < len(missileDmg); j++ {
+			missileDamageValues =
+				append(missileDamageValues,
+					missileDmg[j])
+			// fmt.Printf("missileDamageValues: %v\n", missileDamageValues)
+			// fmt.Println(missileDamageValues)
+			// fmt.Printf("missileDamageValues: %v\n", missileDamageValues)
+		}
+	}
+
+	//srvmissilec
+	if skillRecord[skills.SrvMissileC] != "" {
+		missileDmg := calculateMissileDamage(skillRecord[skills.SrvMissileC], s.level, s)
+		for j := 0; j < len(missileDmg); j++ {
+			missileDamageValues =
+				append(missileDamageValues,
+					missileDmg[j])
+			// fmt.Println(missileDamageValues)
+			// fmt.Printf("missileDamageValues: %v\n", missileDamageValues)
+		}
+
+	}
+
+	// TODO: remove duplicates from the Missile damage array
+	missileDamageValues = common.RemoveDuplicateDamageRows(missileDamageValues)
+
+	return missileDamageValues
+}
 func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile *fileutil.File, skillFile *fileutil.File, startlevel int, maxlevel int) [][]damage.Damage {
 	// fmt.Println("Entered getSkillMissileDamageValues")
 	//returns a 2D array of all missile damage values for a skill
@@ -392,7 +364,7 @@ func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile
 
 	}
 	// TODO: remove duplicates from the Missile damage array
-	missileDamageValues = common.RemoveDuplicateDamageRows(missileDamageValues)
+	// missileDamageValues = common.RemoveDuplicateDamageRows(missileDamageValues)
 
 	return missileDamageValues
 }
@@ -503,11 +475,11 @@ func calculateMissileDamage(
 	missileRecord := skill.getMissileRecord(missileName)
 
 	if missileRecord[missiles.Skill] != "" {
-		missileSkill := NewSkill(missileRecord[missiles.Skill], skill.skillFile, skill.missileFile)
+		missileSkill := NewSkill(missileRecord[missiles.Skill], skill.skillFile, skill.missileFile, sLvl)
 
 		// then, calculate the damage for this missile
-		tmpSkillDamage := missileSkill.getSkillEleDamageValues(sLvl)
-		missileDamageSlice = append(missileDamageSlice, damage.Damage{missileSkill.name, tmpSkillDamage[0], tmpSkillDamage[1]})
+		tmpSkillDamage := missileSkill.getSkillEleDamageValues()
+		missileDamageSlice = append(missileDamageSlice, damage.Damage{missileSkill.name, tmpSkillDamage.Min, tmpSkillDamage.Max})
 
 	} else if missileRecord[missiles.EMin] != "" {
 		eMin, _ := strconv.ParseFloat(missileRecord[missiles.EMin], 64)
