@@ -17,7 +17,7 @@ type SkillRange struct {
 	skillArray  []Skill
 }
 
-func NewSkillRange(skillName string, skillFile *fileutil.File, missileFile *fileutil.File, startLevel int, endLevel int) *SkillRange {
+func NewSkillRange(skillName string, skillFile *fileutil.File, missileFile *fileutil.File, startLevel int, endLevel int) (*SkillRange, error) {
 	skillRange := &SkillRange{
 		skillName:   skillName,
 		skillFile:   skillFile,
@@ -30,10 +30,11 @@ func NewSkillRange(skillName string, skillFile *fileutil.File, missileFile *file
 		tmpSkill := NewSkill(skillName, skillFile, missileFile, startLevel+i)
 		tmpSkill.PopulateMissileDamage()
 		tmpSkill.populateElementalDamage()
+		tmpSkill.populatePhysicalDamage()
 		skillArray[i] = *tmpSkill
 	}
 	skillRange.skillArray = skillArray
-	return skillRange
+	return skillRange, nil
 }
 
 func (sr SkillRange) PrintSkillTable() {
@@ -61,7 +62,7 @@ func (sr SkillRange) PrintSkillTable() {
 	}
 	t.AppendRow(skillinfo["manacost"])
 
-	// get skill damage information
+	// get skill elemental damage information
 	skillinfo["eledmg"] = make([]interface{}, leveloffset+1)
 	skillinfo["eledmg"][0] = fmt.Sprintf("%s Dmg", sr.skillArray[0].elementalDamage.DmgType)
 	for i := 1; i <= leveloffset; i++ {
@@ -70,26 +71,38 @@ func (sr SkillRange) PrintSkillTable() {
 	}
 	t.AppendRow(skillinfo["eledmg"])
 
-	for i, missile := range sr.skillArray[0].missileDamage {
-		missileIndex := fmt.Sprintf("missile%d", i)
-		skillinfo[fmt.Sprintf(missileIndex)] = make([]interface{}, 1)
-		skillinfo[missileIndex][0] = missile.DmgType
+	// get skill physical damage information
+	skillinfo["physdmg"] = make([]interface{}, leveloffset+1)
+	skillinfo["physdmg"][0] = fmt.Sprintf("%s Dmg", sr.skillArray[0].physicalDamage.DmgType)
+	for i := 1; i <= leveloffset; i++ {
+		physDmg := sr.skillArray[i-1].physicalDamage
+		skillinfo["physdmg"][i] = fmt.Sprintf("%.1f - %.1f", physDmg.Min, physDmg.Max)
 	}
+	t.AppendRow(skillinfo["physdmg"])
 
 	// get missile damage
-	// fmt.Printf("len(sr.skillArray): %v\n", len(sr.skillArray))
-	for j := 0; j < len(sr.skillArray); j++ {
-		missileDmg := sr.skillArray[j].missileDamage
-		for i := 0; i < len(missileDmg); i++ {
-			missileIndex := fmt.Sprintf("missile%d", i)
-			// skillinfo[missileIndex][i] = fmt.Sprintf("%.0f - %.0f", missileDmg[j][i], missileDmg[j][i+1])
-			skillinfo[missileIndex] = append(skillinfo[missileIndex], fmt.Sprintf("%.1f - %.1f", missileDmg[i].Min, missileDmg[i].Max))
-		}
-	}
+	if len(sr.skillArray[0].missileDamage) > 0 {
+		t.AppendSeparator()
+		t.AppendRow(table.Row{"Missile Damage"})
+		t.AppendSeparator()
 
-	for i := range sr.skillArray[0].missileDamage {
-		missileIndex := fmt.Sprintf("missile%d", i)
-		t.AppendRow(skillinfo[missileIndex])
+		for i, missile := range sr.skillArray[0].missileDamage {
+			missileIndex := fmt.Sprintf("missile%d", i)
+			skillinfo[fmt.Sprintf(missileIndex)] = make([]interface{}, 1)
+			skillinfo[missileIndex][0] = missile.DmgType
+		}
+		for j := 0; j < len(sr.skillArray); j++ {
+			missileDmg := sr.skillArray[j].missileDamage
+			for i := 0; i < len(missileDmg); i++ {
+				missileIndex := fmt.Sprintf("missile%d", i)
+				// skillinfo[missileIndex][i] = fmt.Sprintf("%.0f - %.0f", missileDmg[j][i], missileDmg[j][i+1])
+				skillinfo[missileIndex] = append(skillinfo[missileIndex], fmt.Sprintf("%.1f - %.1f", missileDmg[i].Min, missileDmg[i].Max))
+			}
+		}
+		for i := range sr.skillArray[0].missileDamage {
+			missileIndex := fmt.Sprintf("missile%d", i)
+			t.AppendRow(skillinfo[missileIndex])
+		}
 	}
 
 	t.Render()

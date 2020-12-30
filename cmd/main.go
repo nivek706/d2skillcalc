@@ -35,13 +35,17 @@ func startInputLoop(skillFile *fileutil.File, missileFile *fileutil.File) {
 		if skillName == "exit" {
 			break
 		}
-		skillRange := skill.NewSkillRange(skillName, skillFile, missileFile, 1, 10)
+		skillRange, err := skill.NewSkillRange(skillName, skillFile, missileFile, 1, 10)
+		if err != nil {
+			fmt.Println("error")
+			return
+		}
 		skillRange.PrintSkillTable()
-		skillRange = skill.NewSkillRange(skillName, skillFile, missileFile, 11, 20)
+		skillRange, err = skill.NewSkillRange(skillName, skillFile, missileFile, 11, 20)
 		skillRange.PrintSkillTable()
-		skillRange = skill.NewSkillRange(skillName, skillFile, missileFile, 21, 30)
+		skillRange, err = skill.NewSkillRange(skillName, skillFile, missileFile, 21, 30)
 		skillRange.PrintSkillTable()
-		skillRange = skill.NewSkillRange(skillName, skillFile, missileFile, 31, 40)
+		skillRange, err = skill.NewSkillRange(skillName, skillFile, missileFile, 31, 40)
 		skillRange.PrintSkillTable()
 	}
 }

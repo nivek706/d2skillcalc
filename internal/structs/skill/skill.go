@@ -33,13 +33,12 @@ func (skill Skill) populateSkillDamage() {
 
 }
 
-func (skill Skill) populatePhysicalDamage() {
-
+func (skill *Skill) populatePhysicalDamage() {
+	skill.physicalDamage = skill.getPhysDamageValues()
 }
 
 func (skill *Skill) populateElementalDamage() {
 	skill.elementalDamage = skill.getSkillEleDamageValues()
-
 }
 
 func (skill *Skill) PopulateMissileDamage() {
@@ -85,6 +84,54 @@ func (skill Skill) getManaCost() float64 {
 	return manacost
 }
 
+func (skill Skill) getPhysDamageValues() damage.Damage {
+	skillRecord := skill.getSkillRecord()
+
+	hitShift, _ := strconv.ParseFloat(skillRecord[skills.HitShift], 64)
+
+	//get min ele damage stats
+	minDam, _ := strconv.ParseFloat(skillRecord[skills.MinDam], 64)
+	minLevDam1, _ := strconv.ParseFloat(skillRecord[skills.MinLevDam1], 64)
+	minLevDam2, _ := strconv.ParseFloat(skillRecord[skills.MinLevDam2], 64)
+	minLevDam3, _ := strconv.ParseFloat(skillRecord[skills.MinLevDam3], 64)
+	minLevDam4, _ := strconv.ParseFloat(skillRecord[skills.MinLevDam4], 64)
+	minLevDam5, _ := strconv.ParseFloat(skillRecord[skills.MinLevDam5], 64)
+
+	minPhysDmg := calculateDamage(skill.level, hitShift, minDam, minLevDam1, minLevDam2, minLevDam3, minLevDam4, minLevDam5)
+
+	//get max ele damage stats
+	maxDam, _ := strconv.ParseFloat(skillRecord[skills.MaxDam], 64)
+	maxLevDam1, _ := strconv.ParseFloat(skillRecord[skills.MaxLevDam1], 64)
+	maxLevDam2, _ := strconv.ParseFloat(skillRecord[skills.MaxLevDam2], 64)
+	maxLevDam3, _ := strconv.ParseFloat(skillRecord[skills.MaxLevDam3], 64)
+	maxLevDam4, _ := strconv.ParseFloat(skillRecord[skills.MaxLevDam4], 64)
+	maxLevDam5, _ := strconv.ParseFloat(skillRecord[skills.MaxLevDam5], 64)
+
+	maxPhysDmg := calculateDamage(skill.level, hitShift, maxDam, maxLevDam1, maxLevDam2, maxLevDam3, maxLevDam4, maxLevDam5)
+
+	var missileFunc string = ""
+	if skillRecord[skills.SrvMissileC] != "" {
+		missileFunc = skillRecord[skills.SrvMissileC]
+	} else if skillRecord[skills.SrvMissileB] != "" {
+		missileFunc = skillRecord[skills.SrvMissileB]
+	} else if skillRecord[skills.SrvMissileA] != "" {
+		missileFunc = skillRecord[skills.SrvMissileA]
+	} else if skillRecord[skills.SrvMissile] != "" {
+		missileFunc = skillRecord[skills.SrvMissile]
+	}
+	// fmt.Printf("Phys damage before missileFunc, min: %.1f, max: %.1f\n", minPhysDmg, maxPhysDmg)
+
+	if missileFunc != "" {
+		// fmt.Printf("Found a missileFunc in a physical skill! missileFunc: %s\n", missileFunc)
+		//apply the missileFunc damage calculation/transformation
+		minPhysDmg = calculateMissileFuncDamage(missileFunc, minPhysDmg, 0)
+		maxPhysDmg = calculateMissileFuncDamage(missileFunc, maxPhysDmg, 0)
+	}
+
+	damageValues := damage.Damage{DmgType: "Physical", Min: minPhysDmg, Max: maxPhysDmg}
+
+	return damageValues
+}
 func (skill Skill) getSkillEleDamageValues() damage.Damage {
 	skillRecord := skill.getSkillRecord()
 
@@ -593,20 +640,35 @@ func calculateMissileDamage(
 
 func calculateMissileFuncDamage(missileFunc string, damage float64, length float64) float64 {
 	var returnDmg float64
-	// fmt.Printf("missileFunc: %s\n", missileFunc)
 	switch missileFunc {
+	case "infernoflame1":
+		returnDmg = damage * 25
+	case "blaze":
+		returnDmg = damage * 25 * 3
 	case "firewall":
 		returnDmg = damage * 25 * 3
 	case "meteorfire":
 		returnDmg = damage * 25 * 3
 	case "firestormmaker":
-		returnDmg = damage * 24 * 3
+		returnDmg = damage //this calculation is wrong; hard to determine
+	case "moltenboulderfirepath":
+		returnDmg = damage //another difficult calc to determine
 	case "arcticblast1":
 		returnDmg = damage * 25
 	case "poisonnova":
 		returnDmg = damage * length
 	case "poisonexplosioncloud":
 		returnDmg = damage * length
+	case "poisonjav":
+		returnDmg = damage * length
+	case "plaguejavelin":
+		returnDmg = damage * length
+	case "immolationfire":
+		returnDmg = damage * 25 * 3
+	case "fistsoffirefirewall":
+		returnDmg = damage * 25 * 2
+	case "royalstrikemeteorfire":
+		returnDmg = damage * 25 * 3
 	default:
 		returnDmg = damage
 	}
