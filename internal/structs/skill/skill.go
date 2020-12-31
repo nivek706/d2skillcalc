@@ -1,6 +1,7 @@
 package skill
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 
@@ -277,6 +278,8 @@ func (s Skill) getSkillMissileDamage(skillRecord []string) []damage.Damage {
 
 	return missileDamageValues
 }
+
+/*
 func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile *fileutil.File, skillFile *fileutil.File, startlevel int, maxlevel int) [][]damage.Damage {
 	// fmt.Println("Entered getSkillMissileDamageValues")
 	//returns a 2D array of all missile damage values for a skill
@@ -415,6 +418,7 @@ func (skill Skill) getSkillMissileDamageValues(skillRecord []string, missileFile
 
 	return missileDamageValues
 }
+*/
 
 func calculateDamage(sLvl int, hitShift float64, baseDmg float64, levDmg1 float64, levDmg2 float64, levDmg3 float64, levDmg4 float64, levDmg5 float64) float64 {
 	var calcDmg float64
@@ -560,6 +564,33 @@ func calculateMissileDamage(
 
 		missileDamageSlice = append(missileDamageSlice, damage.Damage{missileName, eMissileDamageMin, eMissileDamageMax})
 
+	}
+
+	// physical missile section
+	if missileRecord[missiles.MinDamage] != "" {
+		minDam, _ := strconv.ParseFloat(missileRecord[missiles.MinDamage], 64)
+		minLevDam1, _ := strconv.ParseFloat(missileRecord[missiles.MinLevDam1], 64)
+		minLevDam2, _ := strconv.ParseFloat(missileRecord[missiles.MinLevDam2], 64)
+		minLevDam3, _ := strconv.ParseFloat(missileRecord[missiles.MinLevDam3], 64)
+		minLevDam4, _ := strconv.ParseFloat(missileRecord[missiles.MinLevDam4], 64)
+		minLevDam5, _ := strconv.ParseFloat(missileRecord[missiles.MinLevDam5], 64)
+
+		maxDam, _ := strconv.ParseFloat(missileRecord[missiles.MaxDamage], 64)
+		maxLevDam1, _ := strconv.ParseFloat(missileRecord[missiles.MaxLevDam1], 64)
+		maxLevDam2, _ := strconv.ParseFloat(missileRecord[missiles.MaxLevDam2], 64)
+		maxLevDam3, _ := strconv.ParseFloat(missileRecord[missiles.MaxLevDam3], 64)
+		maxLevDam4, _ := strconv.ParseFloat(missileRecord[missiles.MaxLevDam4], 64)
+		maxLevDam5, _ := strconv.ParseFloat(missileRecord[missiles.MaxLevDam5], 64)
+
+		hitShift, _ := strconv.ParseFloat(missileRecord[missiles.HitShift], 64)
+
+		pMissileDamageMin := calculateDamage(sLvl, hitShift, minDam, minLevDam1, minLevDam2, minLevDam3, minLevDam4, minLevDam5)
+		pMissileDamageMax := calculateDamage(sLvl, hitShift, maxDam, maxLevDam1, maxLevDam2, maxLevDam3, maxLevDam4, maxLevDam5)
+
+		pMissileDamageMin = calculateMissileFuncDamage(missileName, pMissileDamageMin, 0)
+		pMissileDamageMax = calculateMissileFuncDamage(missileName, pMissileDamageMax, 0)
+
+		missileDamageSlice = append(missileDamageSlice, damage.Damage{fmt.Sprintf("%s (phys)", missileName), pMissileDamageMin, pMissileDamageMax})
 	}
 
 	//if there is a SubMissile of any type, calculate that and append
