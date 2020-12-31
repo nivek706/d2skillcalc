@@ -6,6 +6,7 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/nivek706/d2skillcalc/pkg/fileutil"
+	"github.com/nivek706/d2skillcalc/pkg/index/eletypelookup"
 )
 
 type SkillRange struct {
@@ -64,7 +65,7 @@ func (sr SkillRange) PrintSkillTable() {
 
 	// get skill elemental damage information
 	skillinfo["eledmg"] = make([]interface{}, leveloffset+1)
-	skillinfo["eledmg"][0] = fmt.Sprintf("%s Dmg", sr.skillArray[0].elementalDamage.DmgType)
+	skillinfo["eledmg"][0] = fmt.Sprintf("%s Dmg", eletypelookup.GetType(sr.skillArray[0].elementalDamage.DmgType))
 	for i := 1; i <= leveloffset; i++ {
 		eleDmg := sr.skillArray[i-1].elementalDamage
 		skillinfo["eledmg"][i] = fmt.Sprintf("%.1f - %.1f", eleDmg.Min, eleDmg.Max)
@@ -73,7 +74,7 @@ func (sr SkillRange) PrintSkillTable() {
 
 	// get skill physical damage information
 	skillinfo["physdmg"] = make([]interface{}, leveloffset+1)
-	skillinfo["physdmg"][0] = fmt.Sprintf("%s Dmg", sr.skillArray[0].physicalDamage.DmgType)
+	skillinfo["physdmg"][0] = fmt.Sprintf("%s Dmg", eletypelookup.GetType(sr.skillArray[0].physicalDamage.DmgType))
 	for i := 1; i <= leveloffset; i++ {
 		physDmg := sr.skillArray[i-1].physicalDamage
 		skillinfo["physdmg"][i] = fmt.Sprintf("%.1f - %.1f", physDmg.Min, physDmg.Max)
@@ -89,7 +90,7 @@ func (sr SkillRange) PrintSkillTable() {
 		for i, missile := range sr.skillArray[0].missileDamage {
 			missileIndex := fmt.Sprintf("missile%d", i)
 			skillinfo[fmt.Sprintf(missileIndex)] = make([]interface{}, 1)
-			skillinfo[missileIndex][0] = missile.DmgType
+			skillinfo[missileIndex][0] = fmt.Sprintf("%s (%s)", missile.Name, eletypelookup.GetType(missile.DmgType))
 		}
 		for j := 0; j < len(sr.skillArray); j++ {
 			missileDmg := sr.skillArray[j].missileDamage

@@ -1,14 +1,12 @@
 package skill
 
 import (
-	"fmt"
 	"math"
 	"strconv"
 
 	"github.com/nivek706/d2skillcalc/internal/common"
 	"github.com/nivek706/d2skillcalc/internal/structs/damage"
 	"github.com/nivek706/d2skillcalc/pkg/fileutil"
-	"github.com/nivek706/d2skillcalc/pkg/index/eletypelookup"
 	"github.com/nivek706/d2skillcalc/pkg/index/missiles"
 	"github.com/nivek706/d2skillcalc/pkg/index/skills"
 )
@@ -222,7 +220,7 @@ func (skill Skill) getSkillEleDamageValues() damage.Damage {
 		maxEleDmg = calculateMissileFuncDamage(missileFunc, maxEleDmg, length)
 	}
 
-	damageValues := damage.Damage{DmgType: eletypelookup.EType[skillRecord[skills.EType]], Min: minEleDmg, Max: maxEleDmg}
+	damageValues := damage.Damage{Name: skillRecord[skills.Skill], DmgType: skillRecord[skills.EType], Min: minEleDmg, Max: maxEleDmg}
 
 	return damageValues
 }
@@ -389,9 +387,10 @@ func calculateMissileDamage(
 
 		// then, calculate the damage for this missile
 		tmpSkillDamage := missileSkill.getSkillEleDamageValues()
-		missileDamageSlice = append(missileDamageSlice, damage.Damage{missileSkill.name, tmpSkillDamage.Min, tmpSkillDamage.Max})
+		missileDamageSlice = append(missileDamageSlice, tmpSkillDamage)
 
 	} else if missileRecord[missiles.EMin] != "" {
+		dmgType := missileRecord[missiles.EType]
 		eMin, _ := strconv.ParseFloat(missileRecord[missiles.EMin], 64)
 		eMinLev1, _ := strconv.ParseFloat(missileRecord[missiles.MinELev1], 64)
 		eMinLev2, _ := strconv.ParseFloat(missileRecord[missiles.MinELev2], 64)
@@ -421,7 +420,7 @@ func calculateMissileDamage(
 		eMissileDamageMin = calculateMissileFuncDamage(missileName, eMissileDamageMin, length)
 		eMissileDamageMax = calculateMissileFuncDamage(missileName, eMissileDamageMax, length)
 
-		missileDamageSlice = append(missileDamageSlice, damage.Damage{missileName, eMissileDamageMin, eMissileDamageMax})
+		missileDamageSlice = append(missileDamageSlice, damage.Damage{missileName, dmgType, eMissileDamageMin, eMissileDamageMax})
 
 	}
 
@@ -449,7 +448,7 @@ func calculateMissileDamage(
 		pMissileDamageMin = calculateMissileFuncDamage(missileName, pMissileDamageMin, 0)
 		pMissileDamageMax = calculateMissileFuncDamage(missileName, pMissileDamageMax, 0)
 
-		missileDamageSlice = append(missileDamageSlice, damage.Damage{fmt.Sprintf("%s (phys)", missileName), pMissileDamageMin, pMissileDamageMax})
+		missileDamageSlice = append(missileDamageSlice, damage.Damage{missileName, "Physical", pMissileDamageMin, pMissileDamageMax})
 	}
 
 	//if there is a SubMissile of any type, calculate that and append
