@@ -1,18 +1,17 @@
 package fileutil
 
 import (
-	"encoding/csv"
-	"os"
 	"bufio"
+	"encoding/csv"
 	"io"
-	"fmt"
+	"os"
 )
 
 // File - This is just placeholder stuff
 type File struct {
 	FileName string
-	Headers []string
-	Rows [][]string
+	Headers  []string
+	Rows     [][]string
 }
 
 func readCsv(csvfile io.Reader, filename string) *File {
@@ -29,7 +28,7 @@ func readCsv(csvfile io.Reader, filename string) *File {
 	headers := make([]string, 0)
 
 	for i, line := range raw {
-		if i==0 {
+		if i == 0 {
 			// fmt.Println(line)
 			for j := range line {
 				// fmt.Println(j)
@@ -61,34 +60,4 @@ func check(e error) {
 	if e != nil {
 		panic(e)
 	}
-}
-
-func main() {
-
-	fmt.Println("Test main of fileutil")
-
-	file, err := os.Open("../../assets/113c-data/Skills.txt")
-	check(err)
-
-	// fmt.Println(file)
-
-	reader := bufio.NewReader(file)
-
-	// fmt.Println(reader)
-
-	// test, err := reader.Peek(5)
-	// check(err)
-
-	dfile := readCsv(reader, "Skills.txt")
-
-	for header := range dfile.Headers {
-		fmt.Println(dfile.Headers[header])
-	}
-
-	for row := range dfile.Rows {
-		fmt.Println(dfile.Rows[row][0])
-	}
-
-
-
 }
