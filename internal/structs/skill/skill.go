@@ -1,8 +1,10 @@
 package skill
 
 import (
+	"errors"
 	"math"
 	"strconv"
+	"strings"
 
 	"github.com/nivek706/d2skillcalc/internal/common"
 	"github.com/nivek706/d2skillcalc/internal/structs/damage"
@@ -28,23 +30,26 @@ func NewSkill(name string, skillFile *fileutil.File, missileFile *fileutil.File,
 	return s
 }
 
-func (skill Skill) populateSkillDamage() {
+func (s *Skill) PopulateSkillDamage() {
+	s.populatePhysicalDamage()
+	s.populateElementalDamage()
+	s.PopulateMissileDamage()
 
 }
 
-func (skill *Skill) populatePhysicalDamage() {
-	skill.physicalDamage = skill.getPhysDamageValues()
+func (s *Skill) populatePhysicalDamage() {
+	s.physicalDamage = s.getPhysDamageValues()
 }
 
-func (skill *Skill) populateElementalDamage() {
-	skill.elementalDamage = skill.getSkillEleDamageValues()
+func (s *Skill) populateElementalDamage() {
+	s.elementalDamage = s.getSkillEleDamageValues()
 }
 
-func (skill *Skill) PopulateMissileDamage() {
-	skillRecord := skill.getSkillRecord()
+func (s *Skill) PopulateMissileDamage() {
+	skillRecord := s.getSkillRecord()
 	// fmt.Println(skillRecord)
-	missileDamageArray := skill.getSkillMissileDamage(skillRecord)
-	skill.missileDamage = missileDamageArray
+	missileDamageArray := s.getSkillMissileDamage(skillRecord)
+	s.missileDamage = missileDamageArray
 	// for i := 0; i < len(missileDamageArray); i++ {
 	// 	// tempMissileDmg := make(Damage)
 	// 	fmt.Printf("missileDamageArray[%d]: %v\n", i, missileDamageArray[i])
@@ -52,21 +57,31 @@ func (skill *Skill) PopulateMissileDamage() {
 
 }
 
-func (skill Skill) getSkillRecord() []string {
+func (s *Skill) GetMissileDamageByName(name string) (*damage.Damage, error) {
+	for _, mDmg := range s.missileDamage {
+		if strings.EqualFold(mDmg.Name, name) {
+			return &mDmg, nil
+		}
+	}
+
+	return nil, errors.New("Missile damage not found")
+}
+
+func (s Skill) getSkillRecord() []string {
 	var skillRecord []string
-	for row := range skill.skillFile.Rows {
-		if skill.skillFile.Rows[row][skills.Skill] == skill.name {
-			skillRecord = skill.skillFile.Rows[row]
+	for row := range s.skillFile.Rows {
+		if s.skillFile.Rows[row][skills.Skill] == s.name {
+			skillRecord = s.skillFile.Rows[row]
 		}
 	}
 	return skillRecord
 }
 
-func (skill Skill) getMissileRecord(missileName string) []string {
+func (s Skill) getMissileRecord(missileName string) []string {
 	var missile []string
-	for row := range skill.missileFile.Rows {
-		if skill.missileFile.Rows[row][missiles.Missile] == missileName {
-			missile = skill.missileFile.Rows[row]
+	for row := range s.missileFile.Rows {
+		if s.missileFile.Rows[row][missiles.Missile] == missileName {
+			missile = s.missileFile.Rows[row]
 		}
 	}
 	return missile
@@ -131,6 +146,7 @@ func (skill Skill) getPhysDamageValues() damage.Damage {
 
 	return damageValues
 }
+
 func (skill Skill) getSkillEleDamageValues() damage.Damage {
 	skillRecord := skill.getSkillRecord()
 
@@ -537,7 +553,7 @@ func calculateMissileFuncDamage(missileFunc string, damage float64, length float
 	case "firewall":
 		returnDmg = damage * 25 * 3
 	case "meteorfire":
-		returnDmg = damage * 25 * 3
+		returnDmg = damage * 24.9 * 3
 	case "firestormmaker":
 		returnDmg = damage //this calculation is wrong; hard to determine
 	case "moltenboulderfirepath":
