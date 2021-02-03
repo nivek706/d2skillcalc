@@ -70,7 +70,9 @@ func (sr SkillRange) PrintSkillTable() {
 		eleDmg := sr.skillArray[i-1].elementalDamage
 		skillinfo["eledmg"][i] = fmt.Sprintf("%.1f - %.1f", eleDmg.Min, eleDmg.Max)
 	}
-	t.AppendRow(skillinfo["eledmg"])
+	if checkForNonzeroDamageRow(skillinfo["eledmg"]) {
+		t.AppendRow(skillinfo["eledmg"])
+	}
 
 	// get skill physical damage information
 	skillinfo["physdmg"] = make([]interface{}, leveloffset+1)
@@ -79,13 +81,16 @@ func (sr SkillRange) PrintSkillTable() {
 		physDmg := sr.skillArray[i-1].physicalDamage
 		skillinfo["physdmg"][i] = fmt.Sprintf("%.1f - %.1f", physDmg.Min, physDmg.Max)
 	}
-	t.AppendRow(skillinfo["physdmg"])
+	if checkForNonzeroDamageRow(skillinfo["physdmg"]) {
+		t.AppendRow(skillinfo["physdmg"])
+	}
 
 	// get missile damage
 	if len(sr.skillArray[0].missileDamage) > 0 {
-		t.AppendSeparator()
-		t.AppendRow(table.Row{"Missile Damage"})
-		t.AppendSeparator()
+		// even though the skill has missile damage, it might all be 0
+		// if that is the case, don't print the missile damage section
+		// missileDamageFlag tracks whether it makes sense to print the missile damage section of the table
+		missileDamageFlag := false
 
 		for i, missile := range sr.skillArray[0].missileDamage {
 			missileIndex := fmt.Sprintf("missile%d", i)
@@ -97,14 +102,36 @@ func (sr SkillRange) PrintSkillTable() {
 			for i := 0; i < len(missileDmg); i++ {
 				missileIndex := fmt.Sprintf("missile%d", i)
 				// skillinfo[missileIndex][i] = fmt.Sprintf("%.0f - %.0f", missileDmg[j][i], missileDmg[j][i+1])
+				if missileDmg[i].Min != 0 || missileDmg[i].Max != 0 {
+					missileDamageFlag = true
+				}
 				skillinfo[missileIndex] = append(skillinfo[missileIndex], fmt.Sprintf("%.1f - %.1f", missileDmg[i].Min, missileDmg[i].Max))
 			}
 		}
-		for i := range sr.skillArray[0].missileDamage {
-			missileIndex := fmt.Sprintf("missile%d", i)
-			t.AppendRow(skillinfo[missileIndex])
+		if missileDamageFlag == true {
+			t.AppendSeparator()
+			t.AppendRow(table.Row{"Missile Damage"})
+			t.AppendSeparator()
+			for i := range sr.skillArray[0].missileDamage {
+				missileIndex := fmt.Sprintf("missile%d", i)
+				t.AppendRow(skillinfo[missileIndex])
+			}
 		}
 	}
 
 	t.Render()
+}
+
+func checkForNonzeroDamageRow(input []interface{}) bool {
+	returnFlag := false
+	for i, value := range input {
+		if i == 0 {
+			// go next
+		} else {
+			if value != "0.0 - 0.0" {
+				returnFlag = true
+			}
+		}
+	}
+	return returnFlag
 }
